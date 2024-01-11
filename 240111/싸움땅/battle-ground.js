@@ -1,5 +1,32 @@
 const fs = require('fs');
 const input = fs.readFileSync(0).toString().split('\n');
+/**
+16 7 500
+7 0 2 3 0 8 7 7 6 1 4 6 10 3 9 9
+10 10 9 3 6 3 7 2 10 1 0 6 9 7 2 7
+10 7 3 4 6 6 1 3 4 5 9 7 5 0 4 3
+7 2 5 3 7 0 0 2 1 8 6 1 2 0 7 6
+9 3 0 2 10 1 2 5 6 2 7 7 0 0 1 6
+1 5 2 10 1 4 8 8 3 5 3 4 2 6 7 0
+3 2 2 9 9 7 8 5 4 3 6 8 0 8 0 5
+7 9 3 10 2 2 2 0 0 7 5 1 7 10 10 10
+0 0 2 5 2 0 3 1 1 8 8 4 1 3 1 0
+8 1 2 0 0 0 1 9 10 9 4 3 5 4 0 9
+6 7 3 6 6 3 5 8 6 3 0 2 4 5 3 0
+5 0 3 6 3 1 0 0 7 4 5 0 4 6 9 0
+10 9 5 4 6 4 7 2 10 5 10 2 1 6 3 9
+1 0 3 8 2 1 0 3 2 1 6 9 8 6 2 8
+1 7 4 3 1 3 7 0 6 6 5 0 8 5 3 9
+5 5 10 10 0 7 7 0 2 2 0 6 7 6 7 3
+10 4 2 2
+12 16 0 13
+8 8 1 3
+15 8 1 5
+4 14 0 19
+12 7 3 9
+11 16 2 17
+ */
+//0 181 13 8 14 142 682
 
 const [n, m, k] = input.shift().split(' ').map(Number);
 
@@ -9,7 +36,7 @@ const DY = [0, 1, 0, -1];
 
 const guns = [];
 for (let i = 0; i < n; i++) {
-  guns.push(input[i].split(' ').map(Number));
+  guns.push(input[i].split(' ').map((el) => el.replace('0', '').split('').map(Number)));
 }
 
 // 바라보는 방향으로 움직이는 함수  move
@@ -52,7 +79,7 @@ class Player {
     this.y = y - 1;
     this.dir = dir;
     this.att = att;
-    this.gun = null;
+    this.gun = 0;
     this.point = 0;
   }
   move() {
@@ -64,38 +91,42 @@ class Player {
       this.x = nextX;
       this.y = nextY;
       this.dir = turnDir;
-      this.getGun();
-      return;
     } else {
       this.x = nextX;
       this.y = nextY;
       this.dir = this.dir;
-      this.getGun();
     }
   }
   getGun() {
-    if (this.gun === null) {
-      this.gun = guns[this.x][this.y];
-      guns[this.x][this.y] = 0;
-    } else {
-      if (this.gun < guns[this.x][this.y]) {
-        this.gun = guns[this.x][this.y];
-        guns[this.x][this.y] = 0;
+    if (guns[this.x][this.y].length !== 0) {
+      if (this.gun === 0) {
+        this.gun = guns[this.x][this.y].sort().pop();
+      } else {
+        const maxGun = guns[this.x][this.y].sort().pop();
+        if (this.gun < maxGun) {
+          const temp = this.gun;
+          this.gun = maxGun;
+          guns[this.x][this.y].push(temp);
+          
+        } else {
+          guns[this.x][this.y].push(maxGun);
+        }
       }
     }
   }
   totalAtt() {
-    if (this.gun === null || this.gun === 0) return this.att;
+    if (this.gun === 0) return this.att;
     return this.att + this.gun;
   }
   battle(otherPlayer) {
+    
     if (this.totalAtt() === otherPlayer.totalAtt()) {
       if (this.att > otherPlayer.att) {
-        this.win(this.totalAtt() - otherPlayer.totalAtt());
+        this.win(0);
         otherPlayer.lose();
         this.getGun();
       } else {
-        otherPlayer.win(otherPlayer.totalAtt() - this.totalAtt());
+        otherPlayer.win(0);
         this.lose();
         otherPlayer.getGun();
       }
@@ -124,7 +155,6 @@ class Player {
       this.y = nextY;
       this.dir = turnDir;
       this.getGun();
-      return;
     } else {
       this.x = nextX;
       this.y = nextY;
@@ -136,12 +166,11 @@ class Player {
     this.point = point;
   }
   lose() {
-    guns[this.x][this.y] = this.gun;
-    this.gun = null;
+    if (this.gun !== 0) guns[this.x][this.y].push(this.gun);
+    this.gun = 0;
     this.loseMove();
     this.getGun();
   }
-  compare() {}
 }
 
 for (let [i, j] = [n, 0]; i < n + m; i++, j++) {
@@ -155,13 +184,17 @@ for (let i = 0; i < k; i++) {
     const otherPlayer = check(player.x, player.y, player.num);
     if (otherPlayer) {
       player.battle(otherPlayer);
+    } else {
+      player.getGun();
     }
   }
 }
+
 
 const point = [];
 
 for (const player of players) {
   point.push(player.point);
 }
-console.log(point.join(' '));
+
+console.log(point.join(' '))
