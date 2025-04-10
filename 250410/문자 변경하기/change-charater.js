@@ -1,1 +1,3 @@
-const a = 'C'
+let a = 'C'
+
+a = 'T'
